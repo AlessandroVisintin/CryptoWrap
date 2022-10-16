@@ -1,4 +1,15 @@
+from CryptoWrap.hash import str2sha256
+
 from Crypto.Cipher import AES
+
+from pathlib import Path
+
+
+# binary delimiter
+DEL = b'\x00\x01\x02\x03' \
+		b'\x04\x05\x06\x07' \
+		b'\x08\x09\x0a\x0b' \
+		b'\x0c\x0d\x0e\x0f'
 
 
 def encrypts(value:str, key:str) -> tuple[bytes,bytes,bytes]:
@@ -8,13 +19,14 @@ def encrypts(value:str, key:str) -> tuple[bytes,bytes,bytes]:
 	
 	Args:
 		value : string to encrypt.
-		key : string to use as key. Must be 16-bytes long.
+		key : string to use as key.
 	
 	Returns:
 		tuple(ciphertext, tag, nonce)
 	
 	"""
 	
+	key = str2sha256(key)[:16]
 	cipher = AES.new(key.encode(), AES.MODE_EAX)
 	nonce = cipher.nonce
 	ciphertext, tag = cipher.encrypt_and_digest(value.encode())
@@ -30,7 +42,7 @@ def decrypts(ciphertext:bytes, tag:bytes, nonce:bytes, key:str) -> str:
 		ciphertext : bite-array to decrypt.
 		tag : integrity MAC.
 		nonce : encryption nonce.
-		key : string to use as key. Must be 16-bytes long.
+		key : string to use as key.
 	
 	Returns:
 		decrypted string.
@@ -39,6 +51,7 @@ def decrypts(ciphertext:bytes, tag:bytes, nonce:bytes, key:str) -> str:
 		ValueError : message is not authentic.
 	"""
 	
+	key = str2sha256(key)[:16]
 	cipher = AES.new(key.encode(), AES.MODE_EAX, nonce=nonce)
 	plaintext = cipher.decrypt(ciphertext)
 	cipher.verify(tag)
@@ -53,18 +66,23 @@ def encrypt(input_file:str, output_file:str, key:str) -> None:
 	Args:
 		input_file : file to encrypt
 		output_file : location where to store encrypted file
-		key : string to use as key. Must be 16-bytes long.
+		key : string to use as key.
 
 	"""
 	
-	DEL = b'\x00\x01\x02\x03' \
-		b'\x04\x05\x06\x07' \
-		b'\x08\x09\x0a\x0b' \
-		b'\x0c\x0d\x0e\x0f'
+	input_file = Path(input_file)
+	output_file = Path(output_file)
+	output_parent = Path(output_file.parent)
+	output_parent.mkdir(parents=True, exist_ok=True)
+
+	key = str2sha256(key)[:16]
+	cipher = AES.new(key.encode(), AES.MODE_EAX)	
+	nonce = cipher.nonce
 	
-	with open(input_file, 'r') as f, open(output_file, 'wb') as g:
-		c, t, n = encrypts(f.read(), key)
-		g.write(c + DEL + t + DEL + n)
+	with input_file.open('rb') as f:
+		ciphertext, tag = cipher.encrypt_and_digest(f.read())
+	with output_file.open('wb') as g:
+		g.write(ciphertext + DEL + tag + DEL + nonce)
 
 
 def decrypt(input_file:str, output_file:str, key:str) -> None:
@@ -75,15 +93,22 @@ def decrypt(input_file:str, output_file:str, key:str) -> None:
 	Args:
 		input_file : file to decrypt
 		output_file : location where to store decrypted file
-		key : string to use as key. Must be 16-bytes long.
+		key : string to use as key.
 
 	"""
 	
-	DEL = b'\x00\x01\x02\x03' \
-		b'\x04\x05\x06\x07' \
-		b'\x08\x09\x0a\x0b' \
-		b'\x0c\x0d\x0e\x0f'
+	input_file = Path(input_file)
+	output_file = Path(output_file)
+	output_parent = Path(output_file.parent)
+	output_parent.mkdir(parents=True, exist_ok=True)
+
+	with input_file.open('rb') as f:
+		ciphertext, tag, nonce = f.read().split(DEL)
 	
-	with open(input_file, 'rb') as f, open(output_file, 'w') as g:
-		c, t, n = f.read().split(DEL)
-		g.write( decrypts(c, t, n, key) )
+	key = str2sha256(key)[:16]
+	cipher = AES.new(key.encode(), AES.MODE_EAX, nonce=nonce)
+	plaintext = cipher.decrypt(ciphertext)
+	cipher.verify(tag)
+	
+	with output_file.open('wb') as g:
+		g.write(plaintext)

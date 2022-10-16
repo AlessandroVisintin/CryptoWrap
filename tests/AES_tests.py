@@ -17,9 +17,9 @@ print('Plain : ', p)
 
 
 # encrypt a file
-PLAIN = 'config/CryptoWrap/plain.txt'
-CIPHER = 'config/CryptoWrap/cipher.txt'
-DECRYP = 'config/CryptoWrap/decryp.txt'
+PLAIN = 'out/CryptoWrap/plain.txt'
+CIPHER = 'out/CryptoWrap/test1/cipher.txt'
+DECRYP = 'out/CryptoWrap/test2/decrypt.txt'
 
 print('Encrypting ', PLAIN)
 encrypt(PLAIN, CIPHER, KEY)
