@@ -1,6 +1,6 @@
 from CryptoWrap.hash import str2sha256
 
-from Crypto.Cipher import AES
+from Crypto.Cipher import AES as cAES
 
 from pathlib import Path
 
@@ -27,7 +27,7 @@ def encrypts(value:str, key:str) -> tuple[bytes,bytes,bytes]:
 	"""
 	
 	key = str2sha256(key)[:16]
-	cipher = AES.new(key.encode(), AES.MODE_EAX)
+	cipher = cAES.new(key.encode(), cAES.MODE_EAX)
 	nonce = cipher.nonce
 	ciphertext, tag = cipher.encrypt_and_digest(value.encode())
 	return ciphertext, tag, nonce
@@ -52,7 +52,7 @@ def decrypts(ciphertext:bytes, tag:bytes, nonce:bytes, key:str) -> str:
 	"""
 	
 	key = str2sha256(key)[:16]
-	cipher = AES.new(key.encode(), AES.MODE_EAX, nonce=nonce)
+	cipher = cAES.new(key.encode(), cAES.MODE_EAX, nonce=nonce)
 	plaintext = cipher.decrypt(ciphertext)
 	cipher.verify(tag)
 	return plaintext.decode()
@@ -76,7 +76,7 @@ def encrypt(input_file:str, output_file:str, key:str) -> None:
 	output_parent.mkdir(parents=True, exist_ok=True)
 
 	key = str2sha256(key)[:16]
-	cipher = AES.new(key.encode(), AES.MODE_EAX)	
+	cipher = cAES.new(key.encode(), cAES.MODE_EAX)	
 	nonce = cipher.nonce
 	
 	with input_file.open('rb') as f:
@@ -106,7 +106,7 @@ def decrypt(input_file:str, output_file:str, key:str) -> None:
 		ciphertext, tag, nonce = f.read().split(DEL)
 	
 	key = str2sha256(key)[:16]
-	cipher = AES.new(key.encode(), AES.MODE_EAX, nonce=nonce)
+	cipher = cAES.new(key.encode(), cAES.MODE_EAX, nonce=nonce)
 	plaintext = cipher.decrypt(ciphertext)
 	cipher.verify(tag)
 	
