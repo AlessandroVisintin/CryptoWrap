@@ -118,6 +118,7 @@ def encrypt_folder(folder:str, key:str) -> None:
 	"""
 	
 	Encrypt a folder using a string.
+	Output folder starts with double underscore (__).
 	
 	Args:
 		folder : folder path.
@@ -128,3 +129,20 @@ def encrypt_folder(folder:str, key:str) -> None:
 	for i in Path(folder).glob('**/*'):
 		if i.is_file():
 			encrypt(f'{i}', f'__{i}', key)
+
+
+def decrypt_folder(folder:str, key:str) -> None:
+	"""
+
+	Decrypt a folder using a string.
+	Assumes that root folder name starts with double underscore (__).
+	
+	Args:
+		folder : folder path.
+		key : string to use as key.
+
+	"""
+	
+	for i in Path(folder).glob('**/*'):
+		if i.is_file():
+			decrypt(f'{i}', f'{str(i)[2:]}', key)
