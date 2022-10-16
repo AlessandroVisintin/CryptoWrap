@@ -112,3 +112,19 @@ def decrypt(input_file:str, output_file:str, key:str) -> None:
 	
 	with output_file.open('wb') as g:
 		g.write(plaintext)
+
+
+def encrypt_folder(folder:str, key:str) -> None:
+	"""
+	
+	Encrypt a folder using a string.
+	
+	Args:
+		folder : folder path.
+		key : string to use as key.
+
+	"""
+	
+	for i in Path(folder).glob('**/*'):
+		if i.is_file():
+			encrypt(f'{i}', f'__{i}', key)
